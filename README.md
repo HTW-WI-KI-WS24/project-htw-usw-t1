@@ -3,6 +3,6 @@
 Projektarbeit Unternehmenssoftware Wi23/24
 Thema: (3) Prompt Optimizer
 Teammitglieder:
-- Tra My
+- Tra My Nguyen
 - Phuc Le Ehlert
 - Andy Thieu
