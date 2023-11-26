@@ -23,7 +23,7 @@ def evaluate_and_reformulate_with_davinci(messages):
         "content": "Please rate the quality of the previous completion on a scale from 1 to 10 and explain the rating."
     })
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-3.5-turbo-0613",
         messages=messages
     )
     rating_response = response.choices[0].message.content
@@ -35,7 +35,7 @@ def evaluate_and_reformulate_with_davinci(messages):
     })
 
     response2 = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-3.5-turbo-0613",
         messages=messages
     )
 
