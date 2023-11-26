@@ -3,6 +3,8 @@ from openai import OpenAI
 client = OpenAI()
 
 
+# Methoden ---------------------------
+
 def generate_output_with_turbo(prompt):
     """
     This function sends the prompt to the OpenAI API using the gpt-3.5-turbo model and retrieves the output.
