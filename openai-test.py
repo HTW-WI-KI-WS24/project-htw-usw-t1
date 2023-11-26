@@ -21,5 +21,5 @@ while True:
     assistant_response = response.choices[0].message.content
     print(f"\nSystem: {assistant_response}\n")
 
-    # Add grandmas message to the conversation history
+    # Add response message to the conversation history
     messages.append({"role": "assistant", "content": assistant_response})
