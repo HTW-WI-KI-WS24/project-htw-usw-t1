@@ -47,7 +47,7 @@ def evaluate_and_reformulate_with_davinci(messages):
 
 
 # Example usage:
-original_prompt = "Paint the sky in the colours of your emotions."
+original_prompt = "I want a fitness plan."
 
 # Initial message to the API
 messages = [
