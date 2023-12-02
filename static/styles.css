@@ -1,0 +1,11 @@
+.chat-row{
+    display: flex;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 100%;
+    border-radius: 4px;
+    padding-left: 6px;
+}
+.user_color{
+    background-color: #108E65;
+}

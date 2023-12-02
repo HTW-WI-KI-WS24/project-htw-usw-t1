@@ -1,65 +1,113 @@
-from openai import OpenAI
+from typing import Literal
+from dataclasses import dataclass
+from langchain.llms import OpenAI
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationSummaryMemory
+from langchain_core.messages import SystemMessage, HumanMessage
 
-client = OpenAI()
+import langchain_helper as lch
+import streamlit as st
 
-# Methoden --------------------------------------------------------------------------------
+st.set_page_config(layout="wide")
+@dataclass
+class Message:
+    origin: Literal["USER", "AI"]
+    message: str
 
-# Function to get a response from OpenAI's Chat Completion API
-def get_chat_response(messages):
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=messages
+def load_css():
+    with open("static/styles.css") as f:
+        css = f"<style>{f.read()}</style>"
+        st.markdown(css, unsafe_allow_html=True)
+
+def initialize_session_state():
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = []
+    if "improved_history" not in st.session_state:
+        st.session_state["improved_history"] = []
+    if "gpt_history" not in st.session_state:
+        llm = OpenAI()
+        st.session_state["gpt_history"] = ConversationChain(
+            llm=llm,
+            memory=ConversationSummaryMemory(llm=llm)
+        )
+
+def generate_response():
+    human_prompt = st.session_state["human_prompt"]
+    improved_prompt = improve_prompt(human_prompt)
+    gpt_response = st.session_state["gpt_history"].run(human_prompt)
+    gpt_improved_response = st.session_state["gpt_history"].run(improved_prompt)
+    st.session_state["chat_history"].append(
+        Message("USER", human_prompt)
     )
-    return response.choices[0].message.content
+    st.session_state["chat_history"].append(
+        Message("AI", gpt_response)
+    )
+    st.session_state["improved_history"].append(
+        Message("USER", improved_prompt)
+    )
+    st.session_state["improved_history"].append(
+        Message("AI", gpt_improved_response)
+    )
+
+def improve_prompt(user_prompt):
+    improved_prompt = lch.improve_prompt(user_prompt)
+    return improved_prompt
+
+def delete_chat_history():
+    for key in st.session_state.keys():
+        del st.session_state[key]
+
+def render_layout():
+    with st.container():
+        st.title("BetterPrompt ⭐")
+        st.markdown("_A Prompt Optimizer by Tra My, Le and Andy_")
+        st.markdown("Let BetterPrompt improve your prompt with a single click.")
+
+    with st.form("chat_form"):
+        st.markdown("**Original Prompt**")
+        columns = st.columns([7, 1])
+        columns[0].text_input(
+            placeholder="Enter your prompt",
+            label="chat",
+            label_visibility="collapsed",
+            key="human_prompt"
+        )
+        submit_button = columns[1].form_submit_button(
+            "Send",
+            type="primary",
+        )
+
+    if submit_button:
+        generate_response()
+
+    if "chat_history" in st.session_state:
+        st.button("Delete Chat History",
+                  on_click=delete_chat_history)
+        chat1, chat2 = st.columns(2)
+        with chat1:
+            st.markdown("Original Prompt: ")
+            for message in st.session_state["chat_history"]:
+                div = f"""
+                <div class="chat-row
+                {"" if message.origin == "AI" else "user_color"}">
+                {message.origin}: {message.message}
+                </div>
+                """
+                st.write(div, unsafe_allow_html=True)
+
+        with chat2:
+            st.markdown("Improved Prompt:")
+            for message in st.session_state["improved_history"]:
+                div = f"""
+                <div class="chat-row
+                {"" if message.origin == "AI" else "user_color"}">
+                {message.origin}: {message.message}
+                </div>
+                """
+                st.write(div, unsafe_allow_html=True)
 
 
-# Function to ask LLM to rate the output and reformulate the prompt
-def rate_and_reformulate(messages):
-    # Ask the LLM to rate the output
-    messages.append({
-        "role": "system",
-        "content": "Please rate the quality of the previous completion on a scale from 1 to 10 and explain the rating."
-    })
+load_css()
+initialize_session_state()
+render_layout()
 
-    # Get the rating
-    rating_response = get_chat_response(messages)
-    print(f"Rating: {rating_response}")
-
-    # Ask the LLM to reformulate the prompt for a better output
-    messages.append({
-        "role": "system",
-        "content": "Based on the rating, how would you reformulate the prompt for a better completion."
-    })
-
-    # Get the reformulated prompt
-    reformulated_prompt_response = get_chat_response(messages)
-    print(f"Reformulated Prompt: {reformulated_prompt_response}")
-
-    return rating_response, reformulated_prompt_response
-
-# Main --------------------------------------------------------------------------------
-
-# Initial prompt
-initial_prompt = "How can I manage my time during exam phase?"
-
-# Initial message to the API
-messages = [
-    {"role": "user", "content": initial_prompt}
-]
-
-# Get the initial output
-output = get_chat_response(messages)
-messages.append({"role": "assistant", "content": output})
-
-# Ask LLM to rate the output and suggest a reformulated prompt
-rating, reformulated_prompt = rate_and_reformulate(messages)
-
-print("----------------------------------------")
-print("initial prompt: " + initial_prompt)
-print("output: " + output)
-print("rating: " + rating)
-print("reformulated prompt: " + reformulated_prompt)
-
-# Continue the conversation with the reformulated prompt if necessary
-# This would involve adding the reformulated prompt to messages and getting a new output
-# You could loop this process as needed
