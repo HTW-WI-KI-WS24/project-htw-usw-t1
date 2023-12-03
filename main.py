@@ -35,7 +35,8 @@ def initialize_session_state():
 def generate_response():
     human_prompt = st.session_state["human_prompt"]
     improved_prompt = improve_prompt(human_prompt)
-    improved_prompt = improved_prompt.replace(["Reformulated prompt:", "Reformulated Prompt:"], "")
+    improved_prompt = improved_prompt.replace("Reformulated prompt:", "")
+    improved_prompt = improved_prompt.replace("Reformulated Prompt:", "")
     gpt_response = st.session_state["gpt_history"].run(human_prompt)
     gpt_improved_response = st.session_state["gpt_history"].run(improved_prompt)
     st.session_state["chat_history"].append(
