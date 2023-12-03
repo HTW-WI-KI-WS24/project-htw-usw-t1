@@ -9,6 +9,7 @@ import langchain_helper as lch
 import streamlit as st
 
 st.set_page_config(layout="wide")
+
 @dataclass
 class Message:
     origin: Literal["USER", "AI"]
@@ -34,6 +35,7 @@ def initialize_session_state():
 def generate_response():
     human_prompt = st.session_state["human_prompt"]
     improved_prompt = improve_prompt(human_prompt)
+    improved_prompt = improved_prompt.replace("Reformulated Prompt:", "")
     gpt_response = st.session_state["gpt_history"].run(human_prompt)
     gpt_improved_response = st.session_state["gpt_history"].run(improved_prompt)
     st.session_state["chat_history"].append(
@@ -53,6 +55,12 @@ def improve_prompt(user_prompt):
     improved_prompt = lch.improve_prompt(user_prompt)
     return improved_prompt
 
+def response_to_shortened_prompt(shortened_prompt):
+    response = lch.get_response(shortened_prompt)
+    st.session_state["improved_history"].append(
+        Message("AI", response)
+    )
+
 def delete_chat_history():
     for key in st.session_state.keys():
         del st.session_state[key]
@@ -65,7 +73,7 @@ def render_layout():
 
     with st.form("chat_form"):
         st.markdown("**Original Prompt**")
-        columns = st.columns([7, 1])
+        columns = st.columns([12, 1])
         columns[0].text_input(
             placeholder="Enter your prompt",
             label="chat",
@@ -81,8 +89,16 @@ def render_layout():
         generate_response()
 
     if "chat_history" in st.session_state:
-        st.button("Delete Chat History",
-                  on_click=delete_chat_history)
+        with st.container():
+            columns = st.columns(2)
+            columns[0].button("Delete Chat History",
+                              on_click=delete_chat_history)
+            if columns[1].button("Shorten improved Prompt"):
+                shortened_prompt = lch.shorten_prompt(st.session_state["improved_history"][0].message)
+                st.session_state["improved_history"].append(
+                    Message("USER", shortened_prompt)
+                )
+                response_to_shortened_prompt(shortened_prompt)
         chat1, chat2 = st.columns(2)
         with chat1:
             st.markdown("Original Prompt: ")
@@ -90,7 +106,7 @@ def render_layout():
                 div = f"""
                 <div class="chat-row
                 {"" if message.origin == "AI" else "user_color"}">
-                {message.origin}: {message.message}
+                {message.message}
                 </div>
                 """
                 st.write(div, unsafe_allow_html=True)
@@ -101,13 +117,11 @@ def render_layout():
                 div = f"""
                 <div class="chat-row
                 {"" if message.origin == "AI" else "user_color"}">
-                {message.origin}: {message.message}
+                {message.message}
                 </div>
                 """
                 st.write(div, unsafe_allow_html=True)
 
-
 load_css()
 initialize_session_state()
 render_layout()
-

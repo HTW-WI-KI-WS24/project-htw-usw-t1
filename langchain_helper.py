@@ -8,10 +8,6 @@ from langchain.chains import LLMChain
 llm = OpenAI(streaming=True)
 chat_model = ChatOpenAI()
 
-user_input = "what happened in 2001?"
-response = llm.invoke(user_input)
-print(response)
-
 def improve_prompt(human_message):
     messages = [SystemMessage(
         content=f"Please reformulate the user's prompt '{human_message}' by creating a detailed and comprehensive "
@@ -27,3 +23,17 @@ def improve_prompt(human_message):
     )]
     improved_prompt = llm.invoke(messages)
     return improved_prompt
+
+def shorten_prompt(human_message):
+    messages = [SystemMessage(
+        content=f"Please shorten the user's prompt '{human_message}' to a maximum of 50 words. The shortened prompt "
+                f"should be a concise and clear request that is easy to understand and respond to. Please focus "
+                f"solely on shortening the prompt itself. Do not provide a response or answer to the shortened "
+                f"prompt. Just return the newly crafted, short prompt based on the instructions provided."
+    )]
+    shortened_prompt = llm.invoke(messages)
+    return shortened_prompt
+
+def get_response(prompt):
+    response = llm.invoke(prompt)
+    return response
