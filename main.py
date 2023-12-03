@@ -106,27 +106,27 @@ def render_layout():
             st.markdown("Original Prompt: ")
             for message in st.session_state["chat_history"]:
                 message_length = len(message.message.split())
-                st.write(f"Length: {message_length}")
+                st.code(f"Length: {message_length}")
                 div = f"""
                 <div class="chat-row
                 {"" if message.origin == "AI" else "user_color"}">
                 {message.message}
                 </div>
                 """
-                st.write(div, unsafe_allow_html=True)
+                st.markdown(div, unsafe_allow_html=True)
 
         with chat2:
             st.markdown("Improved Prompt:")
             for message in st.session_state["improved_history"]:
                 message_length = len(message.message.split())
-                st.write(f"Length: {message_length}")
+                st.code(f"Length: {message_length}")
                 div = f"""
                 <div class="chat-row
                 {"" if message.origin == "AI" else "user_color"}">
                 {message.message}
                 </div>
                 """
-                st.write(div, unsafe_allow_html=True)
+                st.markdown(div, unsafe_allow_html=True)
 
 load_css()
 initialize_session_state()
