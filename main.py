@@ -35,7 +35,7 @@ def initialize_session_state():
 def generate_response():
     human_prompt = st.session_state["human_prompt"]
     improved_prompt = improve_prompt(human_prompt)
-    improved_prompt = improved_prompt.replace("Reformulated Prompt:", "")
+    improved_prompt = improved_prompt.replace(["Reformulated prompt:", "Reformulated Prompt:"], "")
     gpt_response = st.session_state["gpt_history"].run(human_prompt)
     gpt_improved_response = st.session_state["gpt_history"].run(improved_prompt)
     st.session_state["chat_history"].append(
@@ -78,7 +78,8 @@ def render_layout():
             placeholder="Enter your prompt",
             label="chat",
             label_visibility="collapsed",
-            key="human_prompt"
+            key="human_prompt",
+            value="What are good computers to buy?"
         )
         submit_button = columns[1].form_submit_button(
             "Send",
@@ -103,6 +104,8 @@ def render_layout():
         with chat1:
             st.markdown("Original Prompt: ")
             for message in st.session_state["chat_history"]:
+                message_length = len(message.message.split())
+                st.write(f"Length: {message_length}")
                 div = f"""
                 <div class="chat-row
                 {"" if message.origin == "AI" else "user_color"}">
@@ -114,6 +117,8 @@ def render_layout():
         with chat2:
             st.markdown("Improved Prompt:")
             for message in st.session_state["improved_history"]:
+                message_length = len(message.message.split())
+                st.write(f"Length: {message_length}")
                 div = f"""
                 <div class="chat-row
                 {"" if message.origin == "AI" else "user_color"}">
