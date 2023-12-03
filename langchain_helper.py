@@ -21,8 +21,8 @@ def improve_prompt(human_message):
                 f"answer to the reformulated prompt. Just return the newly crafted, detailed prompt based on the "
                 f"instructions provided."
     )]
-    improved_prompt = chat_model.invoke(messages)
-    return improved_prompt.content
+    improved_prompt = llm.invoke(messages)
+    return improved_prompt
 
 def shorten_prompt(human_message):
     messages = [SystemMessage(
@@ -35,5 +35,5 @@ def shorten_prompt(human_message):
     return shortened_prompt
 
 def get_response(prompt):
-    response = chat_model.invoke(prompt)
-    return response.content
+    response = llm.invoke(prompt)
+    return response
