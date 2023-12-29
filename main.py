@@ -10,15 +10,18 @@ import streamlit as st
 
 st.set_page_config(layout="wide")
 
+
 @dataclass
 class Message:
     origin: Literal["USER", "AI"]
     message: str
 
+
 def load_css():
     with open("static/styles.css") as f:
         css = f"<style>{f.read()}</style>"
         st.markdown(css, unsafe_allow_html=True)
+
 
 def initialize_session_state():
     if "chat_history" not in st.session_state:
@@ -31,6 +34,7 @@ def initialize_session_state():
             llm=llm,
             memory=ConversationSummaryMemory(llm=llm)
         )
+
 
 def generate_response():
     # Der ursprüngliche Benutzer-Prompt wird geholt.
@@ -73,10 +77,10 @@ def modify_prompt_based_on_preferences(prompt, preferences):
     return modified_prompt
 
 
-
 def improve_prompt(user_prompt):
     improved_prompt = lch.improve_prompt(user_prompt)
     return improved_prompt
+
 
 def response_to_shortened_prompt(shortened_prompt):
     response = lch.get_response(shortened_prompt)
@@ -84,9 +88,11 @@ def response_to_shortened_prompt(shortened_prompt):
         Message("AI", response)
     )
 
+
 def delete_chat_history():
     for key in st.session_state.keys():
         del st.session_state[key]
+
 
 def render_layout():
     with st.container():
@@ -100,17 +106,17 @@ def render_layout():
             with st.expander("Set Your Response Preferences", expanded=False):
                 length_choice = st.selectbox(
                     'Preferred length of the answer:',
-                    ('Short', 'Average', 'Long'), 
+                    ('Short', 'Average', 'Long'),
                     index=1
                 )
                 complexity_choice = st.selectbox(
                     'Complexity level:',
-                    ('Easy', 'Average', 'Complex'), 
+                    ('Easy', 'Average', 'Complex'),
                     index=1
                 )
                 style_choice = st.selectbox(
                     'Tone or style of the response:',
-                    ('Basic', 'Creative'), 
+                    ('Basic', 'Creative'),
                     index=0
                 )
 
@@ -175,11 +181,6 @@ def render_layout():
                     st.markdown(div, unsafe_allow_html=True)
 
 
-
-
-
 load_css()
 initialize_session_state()
 render_layout()
-
-
