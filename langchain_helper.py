@@ -9,16 +9,12 @@ chat_model = ChatOpenAI()
 
 def improve_prompt(human_message):
     messages = [SystemMessage(
-        content=f"Please reformulate the user's prompt '{human_message}' by creating a detailed and comprehensive "
-                f"query. Begin by expanding the core idea of the prompt into a more personalized and specific "
-                f"request. Then, enrich the reformulated prompt by adding hypothetical examples relevant to the "
-                f"topic. These examples should illustrate various scenarios, preferences, or challenges related to "
-                f"the user's query. This approach should help in providing a context-rich, relatable, and specific "
-                f"prompt, aiming to guide a response that comprehensively addresses the user's needs without "
-                f"requiring further clarification on key aspects of their request."
-                f" Please focus solely on enhancing and expanding the prompt itself. Do not provide a response or "
-                f"answer to the reformulated prompt. Just return the newly crafted, detailed prompt based on the "
-                f"instructions provided."
+        content=f"Please refine the user's prompt, '{human_message}', by crafting a more detailed and specific query. "
+                f"Expand on the core concept, adding personalized elements and hypothetical scenarios relevant to the "
+                f"topic. These examples should cover various scenarios, preferences, or challenges pertinent to the "
+                f"query. The aim is to create a context-rich and specific prompt, which thoroughly addresses the "
+                f"user's needs without needing further clarification. Focus on enhancing the prompt itself without "
+                f"providing a response to it. Return the enhanced, detailed prompt based on these guidelines."
     )]
     improved_prompt = llm.invoke(messages)
     return improved_prompt

@@ -54,9 +54,11 @@ def generate_response():
     # Eine Antwort wird basierend auf dem modifizierten Prompt generiert.
     gpt_improved_response = st.session_state["gpt_history"].run(modified_prompt)
 
+    gpt_response = st.session_state["gpt_history"].run(human_prompt)
+
     # Die Nachrichten werden zu den Chat-Historien hinzugefügt.
     st.session_state["chat_history"].append(Message("USER", human_prompt))
-    st.session_state["chat_history"].append(Message("AI", gpt_improved_response))
+    st.session_state["chat_history"].append(Message("AI", gpt_response))
     st.session_state["improved_history"].append(Message("USER", modified_prompt))
     st.session_state["improved_history"].append(Message("AI", gpt_improved_response))
 
