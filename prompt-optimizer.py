@@ -1,3 +1,5 @@
+# FIRST VERSION OF PROMPT OPTIMIZER - NOT USED IN THE PROJECT
+
 from openai import OpenAI
 
 client = OpenAI()
