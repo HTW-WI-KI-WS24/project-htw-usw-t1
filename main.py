@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from langchain.llms import OpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationSummaryMemory
-from langchain_core.messages import SystemMessage, HumanMessage
 
 import langchain_helper as lch
 import streamlit as st
