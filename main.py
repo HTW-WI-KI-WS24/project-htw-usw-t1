@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from langchain.llms import OpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationSummaryMemory
+from langchain_core.messages import SystemMessage
 
 import langchain_helper as lch
 import streamlit as st
@@ -65,13 +66,15 @@ def generate_response():
 def modify_prompt_based_on_preferences(prompt, preferences):
     # Example logic to modify prompt based on preferences
     # This needs to be tailored based on how the language model interprets these instructions
+    llm = OpenAI()
 
     if preferences:
-        length_mod = f" [length: {preferences['length'].lower()}]"
-        complexity_mod = f" [complexity: {preferences['complexity'].lower()}]"
-        style_mod = f" [style: {preferences['style'].lower()}]"
-
-        modified_prompt = prompt + length_mod + complexity_mod + style_mod
+        messages = [SystemMessage(
+            content=f"Please modify the prompt '{prompt}' to be {preferences['length'].lower()} in length. "
+                    f"Please modify the prompt '{prompt}' to be {preferences['complexity'].lower()} in complexity. "
+                    f"Please modify the prompt '{prompt}' to be {preferences['style'].lower()} in style."
+        )]
+        modified_prompt = llm.invoke(messages)
     else:
         modified_prompt = prompt
 
