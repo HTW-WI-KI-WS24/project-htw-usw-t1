@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from langchain.llms import OpenAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationSummaryMemory
+from langchain_helper import add_reference_example, get_reference_examples
 
 import langchain_helper as lch
 import streamlit as st
@@ -100,6 +101,23 @@ def render_layout():
         st.title("BetterPrompt ⭐")
         st.markdown("_A Prompt Optimizer by Tra My, Le and Andy_")
         st.markdown("Let BetterPrompt improve your prompt with a single click.")
+
+        # UI for adding reference examples
+        st.sidebar.header("Reference Examples")
+        example_text = st.sidebar.text_area("Enter a reference response", key="example_text")
+        example_quality = st.sidebar.selectbox("Quality of the response", ["good", "bad"], key="example_quality")
+        if st.sidebar.button("Add Example"):
+            add_reference_example(example_text, example_quality)
+            st.sidebar.success("Example added successfully!")
+
+        # UI for displaying reference examples
+        st.sidebar.header("View Reference Examples")
+        if st.sidebar.button("Show Examples"):
+            good_examples, bad_examples = get_reference_examples()
+            st.sidebar.write("Good Examples:")
+            st.sidebar.write(good_examples)
+            st.sidebar.write("Bad Examples:")
+            st.sidebar.write(bad_examples)
 
         # Layout adjustments start here
         col1, col2, col3 = st.columns([1, 2, 1])  # Adjust the ratio as needed

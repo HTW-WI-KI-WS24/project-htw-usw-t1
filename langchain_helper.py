@@ -1,6 +1,7 @@
 from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage
+from typing import List, Tuple
 
 llm = OpenAI(streaming=True)
 chat_model = ChatOpenAI()
@@ -30,3 +31,32 @@ def shorten_prompt(human_message):
 def get_response(prompt):
     response = llm.invoke(prompt)
     return response
+
+# Define a class to manage reference examples
+class ReferenceExamples:
+    def __init__(self):
+        self.good_examples = []
+        self.bad_examples = []
+
+    def add_example(self, example: str, quality: str):
+        if quality == 'good':
+            self.good_examples.append(example)
+        elif quality == 'bad':
+            self.bad_examples.append(example)
+        else:
+            raise ValueError("Quality must be 'good' or 'bad'.")
+
+    def get_examples(self) -> Tuple[List[str], List[str]]:
+        return self.good_examples, self.bad_examples
+
+# Initialize the reference examples manager
+ref_examples_manager = ReferenceExamples()
+
+# Function to add a new reference example
+def add_reference_example(example: str, quality: str):
+    ref_examples_manager.add_example(example, quality)
+
+# Function to retrieve reference examples
+def get_reference_examples() -> Tuple[List[str], List[str]]:
+    return ref_examples_manager.get_examples()
+
