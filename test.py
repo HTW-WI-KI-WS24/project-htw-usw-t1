@@ -8,8 +8,6 @@ if 'response' not in st.session_state:
     st.session_state['response'] = None
 if 'refined_response' not in st.session_state:
     st.session_state['refined_response'] = None
-if 'current_response_for_evaluation' not in st.session_state:
-    st.session_state['current_response_for_evaluation'] = None
 
 # Main title and description
 with st.container():
@@ -41,15 +39,20 @@ if st.button("Get Response"):
     response_obj = llm.invoke(prompt)
     st.session_state['response'] = response_obj.content if response_obj else "No response generated."
     st.session_state['refined_response'] = None
-    st.session_state['current_response_for_evaluation'] = st.session_state['response']
 
 if st.session_state['response']:
     st.subheader("LLM Response")
     st.write(st.session_state['response'])
 
+    # Evaluation of Original Response
+    rating_original = st.selectbox("Rate the original response:", ["Select a rating", "⭐️", "⭐️⭐️", "⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️⭐️"], key='rating_original')
+    detailed_feedback_original = st.text_area("Provide detailed feedback (optional):", key='feedback_original')
+    if st.button("Submit Feedback for Original Response", key='submit_original'):
+        st.success("Thank you for your detailed feedback!")
+
     st.subheader("Refine Your Prompt")
     refine_option = st.selectbox("Select how you want the response to be refined:",
-                                 ["Select an option", "More Simple", "More Complex", "Step by Step", "More Detailed", "More Concise", "very short"])
+                                 ["Select an option", "More Simple", "More Complex", "Step by Step", "More Detailed", "More Concise", "Very short"])
 
     if refine_option != "Select an option":
         refinement_request = (f"Please reformulate the following prompt, '{prompt}'. The reformulated prompt should "
@@ -59,21 +62,13 @@ if st.session_state['response']:
         refined_prompt_obj = llm.invoke(refinement_request)
         refined_prompt = refined_prompt_obj.content if refined_prompt_obj else "No refined prompt generated."
         st.session_state['refined_response'] = llm.invoke(refined_prompt).content
-        st.session_state['current_response_for_evaluation'] = st.session_state['refined_response']
 
 if st.session_state['refined_response']:
     st.subheader("Refined LLM Response")
     st.write(st.session_state['refined_response'])
 
-# Evaluation of Responses in Sidebar
-st.sidebar.header("Evaluate the Responses")
-current_response = st.session_state['current_response_for_evaluation'] if st.session_state['current_response_for_evaluation'] else "Awaiting response..."
-st.sidebar.write(current_response)
-
-rating = st.sidebar.selectbox("Rate this response:", ["Select a rating", "⭐️", "⭐️⭐️", "⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️⭐️"])
-if rating != "Select a rating":
-    st.sidebar.success("Thank you for your rating!")
-
-detailed_feedback = st.sidebar.text_area("Provide detailed feedback (optional):")
-if st.sidebar.button("Submit Feedback"):
-    st.sidebar.success("Thank you for your detailed feedback!")
+    # Evaluation of Refined Response
+    rating_refined = st.selectbox("Rate the refined response:", ["Select a rating", "⭐️", "⭐️⭐️", "⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️⭐️"], key='rating_refined')
+    detailed_feedback_refined = st.text_area("Provide detailed feedback (optional):", key='feedback_refined')
+    if st.button("Submit Feedback for Refined Response", key='submit_refined'):
+        st.success("Thank you for your detailed feedback!")
