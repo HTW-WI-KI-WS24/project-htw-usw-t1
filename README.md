@@ -12,6 +12,9 @@ Projektarbeit Unternehmenssoftware Wi23/24
 
 # Getting Started
 
+main application: `main.py`
+all other files are old versions or tests
+
 ```bash
 pip3 install langchain streamlit
 ```
