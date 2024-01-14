@@ -1,205 +1,173 @@
-from typing import Literal
-from dataclasses import dataclass
-from langchain.llms import OpenAI
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationSummaryMemory
-from langchain_helper import add_reference_example, get_reference_examples
-
-import langchain_helper as lch
 import streamlit as st
+from langchain.chat_models import ChatOpenAI
 
+llm = ChatOpenAI()
 st.set_page_config(layout="wide")
 
+if 'responses' not in st.session_state:
+    st.session_state['responses'] = []
+if 'input_disabled' not in st.session_state:
+    st.session_state['input_disabled'] = False
+if 'satisfied' not in st.session_state:
+    st.session_state['satisfied'] = False
+if 'reset_input' not in st.session_state:
+    st.session_state['reset_input'] = False
+if 'response_history' not in st.session_state:
+    st.session_state['response_history'] = []
 
-@dataclass
-class Message:
-    origin: Literal["USER", "AI"]
-    message: str
+with st.container():
+    st.title("BetterPrompt ⭐")
+    st.markdown("A Prompt Optimizer by Tra My, Le and Andy")
 
+st.header("Interact with the LLM")
+st.markdown("Enter your prompt and receive a response.")
+prompt = st.text_input("Enter your prompt here", value="", key="prompt")
 
-def load_css():
-    with open("static/styles.css") as f:
-        css = f"<style>{f.read()}</style>"
-        st.markdown(css, unsafe_allow_html=True)
+if st.button("Get Response"):
+    response_obj = llm.invoke(prompt)
+    st.session_state['responses'].append(
+        {'prompt': prompt, 'response': response_obj.content, 'ratings': {}, 'refinements': []})
 
+for idx, item in enumerate(st.session_state['responses']):
+    st.subheader(f"Interaction {idx + 1}")
 
-def initialize_session_state():
-    if "chat_history" not in st.session_state:
-        st.session_state["chat_history"] = []
-    if "improved_history" not in st.session_state:
-        st.session_state["improved_history"] = []
-    if "gpt_history" not in st.session_state:
-        llm = OpenAI()
-        st.session_state["gpt_history"] = ConversationChain(
-            llm=llm,
-            memory=ConversationSummaryMemory(llm=llm)
-        )
+    st.write("Prompt:")
+    st.write(item['prompt'])
+    response_length = str(len(item['response'].split()))
+    st.write("Response:" + " (words: " + response_length + ")")
+    st.write(item['response'])
 
+    if 'ratings' not in item or not all(key in item['ratings'] for key in ['length', 'complexity', 'tone']):
+        item['ratings'] = {'length': 3  , 'complexity': 3, 'tone': 3}
 
-def generate_response():
-    # Der ursprüngliche Benutzer-Prompt wird geholt.
-    human_prompt = st.session_state["human_prompt"]
+    rating_length_key = f'rating_length_{idx}'
+    rating_complexity_key = f'rating_complexity_{idx}'
+    rating_tone_key = f'rating_tone_{idx}'
 
-    # Der verbesserte Prompt wird basierend auf dem ursprünglichen Benutzer-Prompt erstellt.
-    improved_prompt = improve_prompt(human_prompt)
-    improved_prompt = improved_prompt.replace("Reformulated prompt:", "").strip()
-    improved_prompt = improved_prompt.replace("Reformulated Prompt:", "").strip()
+    st.header("Rate the Response")
+    st.subheader("Length (1 = Too Short, 5 = Too Long)")
+    item['ratings']['length'] = st.slider("length", 1, 5, value=item['ratings']['length'], key=rating_length_key)
+    st.subheader("Complexity (1 = Too Simple, 5 = Too Complex)")
+    item['ratings']['complexity'] = st.slider("complexity", 1, 5, value=item['ratings']['complexity'],
+                                              key=rating_complexity_key)
+    st.subheader("Tone (1 = Too Casual, 5 = Too Formal)")
+    item['ratings']['tone'] = st.slider("tone", 1, 5, value=item['ratings']['tone'], key=rating_tone_key)
 
-    # Benutzerpräferenzen werden geholt.
-    preferences = st.session_state.get("preferences", {})
+    if idx == len(st.session_state['responses']) - 1:
+        st.header("Refine the Prompt")
+        action_word_option_key = f'action_word_option_{idx}'
+        action_word_option = st.selectbox("Select the task you want to perform:",
+                                          ["Select an option", "Give", "Generate", "Analyze", "Explain",
+                                           "Write an email", "Write an essay", "Write a story"],
+                                          key=action_word_option_key)
+        format_option_key = f'format_option_{idx}'
+        format_option = st.selectbox("Select how you want to refine the prompt:",
+                                     ["Select an option", "step by step", "in detail", "in a few sentences",
+                                      "in a few paragraphs", "concise", "long"],
+                                     key=format_option_key)
+        tone_option_key = f'tone_option_{idx}'
+        tone_option = st.selectbox("Select the tone you want to use:",
+                                   ["Select an option", "formal", "informal", "casual", "neutral"],
+                                   key=tone_option_key)
+        persona_option_key = f'persona_option_{idx}'
+        persona_option = st.text_input("Enter the persona you want to use:", value="", key=persona_option_key)
 
-    # Der verbesserte Prompt wird basierend auf den Benutzerpräferenzen modifiziert.
-    modified_prompt = modify_prompt_based_on_preferences(improved_prompt, preferences)
+        length_rating = item['ratings']['length']
+        complexity_rating = item['ratings']['complexity']
+        tone_rating = item['ratings']['tone']
 
-    # Eine Antwort wird basierend auf dem modifizierten Prompt generiert.
-    gpt_improved_response = st.session_state["gpt_history"].run(modified_prompt)
+        complexity = ""
 
-    gpt_response = st.session_state["gpt_history"].run(human_prompt)
+        if length_rating == 1:
+            response_length = int(response_length)*2.5
+        elif length_rating == 2:
+            response_length = int(response_length)*1.5
+        elif length_rating == 3:
+            response_length = int(response_length)
+        elif length_rating == 4:
+            response_length = int(response_length)*0.75
+        else:
+            response_length = int(response_length)*0.5
 
-    # Die Nachrichten werden zu den Chat-Historien hinzugefügt.
-    st.session_state["chat_history"].append(Message("USER", human_prompt))
-    st.session_state["chat_history"].append(Message("AI", gpt_response))
-    st.session_state["improved_history"].append(Message("USER", modified_prompt))
-    st.session_state["improved_history"].append(Message("AI", gpt_improved_response))
+        if response_length % 2 != 0:
+            response_length += 0.5
 
+        if complexity_rating == 1:
+            complexity = "complex"
+        elif complexity_rating == 2:
+            complexity = "complicated"
+        elif complexity_rating == 3:
+            complexity = "average"
+        elif complexity_rating == 4:
+            complexity = "simple"
+        else:
+            complexity = "very simple"
 
-def modify_prompt_based_on_preferences(prompt, preferences):
-    # Example logic to modify prompt based on preferences
-    # This needs to be tailored based on how the language model interprets these instructions
+        if tone_rating == 1:
+            tone = "very formal"
+        elif tone_rating == 2:
+            tone = "formal"
+        elif tone_rating == 3:
+            tone = "neutral"
+        elif tone_rating == 4:
+            tone = "casual"
+        else:
+            tone = "very casual"
 
-    if preferences:
-        length_mod = f" [length: {preferences['length'].lower()}]"
-        complexity_mod = f" [complexity: {preferences['complexity'].lower()}]"
-        style_mod = f" [style: {preferences['style'].lower()}]"
+        if st.button("Generate Response with Refinements", key=f'generate_response_{idx}'):
+            refinements = [refinement for refinement in [action_word_option, format_option, tone_option, persona_option]
+                           if refinement != "Select an option"]
+            refinement_instructions = " and ".join(refinements)
+            prompt_refinement = (f"Please reformulate the following prompt to be '{refinement_instructions}': "
+                                 f"{item['prompt']}. The reformulated prompt should include an instruction to the "
+                                 f"assistant to respond at around {str(response_length)} words. Furthermore the "
+                                 f"prompt should include an instruction to the assistant to respond in a {complexity} "
+                                 f"manner and in a {tone} tone."
+                                 f"Furthermore just respond the reformulated prompt.")
 
-        modified_prompt = prompt + length_mod + complexity_mod + style_mod
-    else:
-        modified_prompt = prompt
+            print(prompt_refinement)
 
-    return modified_prompt
+            refined_prompt_obj = llm.invoke(prompt_refinement)
+            print(refined_prompt_obj.content)
+            refined_response_obj = llm.invoke(refined_prompt_obj.content)
 
+            print(refined_response_obj.content)
+            refined_response = refined_response_obj.content if refined_response_obj else "No response generated."
 
-def improve_prompt(user_prompt):
-    improved_prompt = lch.improve_prompt(user_prompt)
-    return improved_prompt
+            st.session_state['responses'].append(
+                {'prompt': refined_prompt_obj.content, 'response': refined_response_obj.content,
+                 'refinements': refinements})
 
+            print(response_length)
 
-def response_to_shortened_prompt(shortened_prompt):
-    response = lch.get_response(shortened_prompt)
-    st.session_state["improved_history"].append(
-        Message("AI", response)
-    )
+# Modification starts from the Satisfaction and Reset checks
+if st.button("I am satisfied with the latest response", key='satisfaction'):
+    # Store the last response in the response history
+    if st.session_state['responses']:
+        last_response = st.session_state['responses'][-1]
+        st.session_state['response_history'].append(last_response)
 
+    # Clear the chat history
+    st.session_state['responses'] = []
 
-def delete_chat_history():
-    for key in st.session_state.keys():
-        del st.session_state[key]
+    st.session_state['satisfied'] = True
+    st.session_state['reset_input'] = True
 
+if st.button("Start over with a new prompt", key='reset_app'):
+    st.session_state['responses'] = []
+    st.session_state['input_disabled'] = False
+    st.session_state['satisfied'] = False
+    st.session_state['reset_input'] = False
 
-def render_layout():
-    with st.container():
-        st.title("BetterPrompt ⭐")
-        st.markdown("_A Prompt Optimizer by Tra My, Le and Andy_")
-        st.markdown("Let BetterPrompt improve your prompt with a single click.")
+if st.session_state['reset_input']:
+    st.session_state['reset_input'] = False
 
-        # UI for adding reference examples
-        st.sidebar.header("Reference Examples")
-        example_text = st.sidebar.text_area("Enter a reference response", key="example_text")
-        example_quality = st.sidebar.selectbox("Quality of the response", ["good", "bad"], key="example_quality")
-        if st.sidebar.button("Add Example"):
-            add_reference_example(example_text, example_quality)
-            st.sidebar.success("Example added successfully!")
-
-        # UI for displaying reference examples
-        st.sidebar.header("View Reference Examples")
-        if st.sidebar.button("Show Examples"):
-            good_examples, bad_examples = get_reference_examples()
-            st.sidebar.write("Good Examples:")
-            st.sidebar.write(good_examples)
-            st.sidebar.write("Bad Examples:")
-            st.sidebar.write(bad_examples)
-
-        # Layout adjustments start here
-        col1, col2, col3 = st.columns([1, 2, 1])  # Adjust the ratio as needed
-        with col1:
-            with st.expander("Set Your Response Preferences", expanded=False):
-                length_choice = st.selectbox(
-                    'Preferred length of the answer:',
-                    ('Short', 'Average', 'Long'),
-                    index=1
-                )
-                complexity_choice = st.selectbox(
-                    'Complexity level:',
-                    ('Easy', 'Average', 'Complex'),
-                    index=1
-                )
-                style_choice = st.selectbox(
-                    'Tone or style of the response:',
-                    ('Basic', 'Creative'),
-                    index=0
-                )
-
-                if st.button('Set Preferences'):
-                    st.session_state['preferences'] = {
-                        'length': length_choice,
-                        'complexity': complexity_choice,
-                        'style': style_choice
-                    }
-                    st.success('Preferences updated!')
-        # Layout adjustments end here
-
-        with st.form("chat_form"):
-            st.markdown("**Original Prompt**")
-            columns = st.columns([12, 1])
-            columns[0].text_input(
-                "Enter your prompt",
-                key="human_prompt",
-                value=""
-            )
-            submit_button = columns[1].form_submit_button("Send")
-
-        if submit_button:
-            generate_response()
-
-        if "chat_history" in st.session_state:
-            with st.container():
-                columns = st.columns(2)
-                columns[0].button("Delete Chat History",
-                                  on_click=delete_chat_history)
-                if columns[1].button("Shorten improved Prompt"):
-                    shortened_prompt = lch.shorten_prompt(st.session_state["improved_history"][0].message)
-                    st.session_state["improved_history"].append(
-                        Message("USER", shortened_prompt)
-                    )
-                    response_to_shortened_prompt(shortened_prompt)
-            chat1, chat2 = st.columns(2)
-            with chat1:
-                st.markdown("Original Prompt: ")
-                for message in st.session_state["chat_history"]:
-                    message_length = len(message.message.split())
-                    st.code(f"Length: {message_length}")
-                    div = f"""
-                    <div class="chat-row
-                    {'' if message.origin == 'AI' else 'user_color'}">
-                    {message.message}
-                    </div>
-                    """
-                    st.markdown(div, unsafe_allow_html=True)
-
-            with chat2:
-                st.markdown("Improved Prompt:")
-                for message in st.session_state["improved_history"]:
-                    message_length = len(message.message.split())
-                    st.code(f"Length: {message_length}")
-                    div = f"""
-                    <div class="chat-row
-                    {'' if message.origin == 'AI' else 'user_color'}">
-                    {message.message}
-                    </div>
-                    """
-                    st.markdown(div, unsafe_allow_html=True)
-
-
-load_css()
-initialize_session_state()
-render_layout()
+# Displaying the response history in the sidebar
+st.sidebar.header("Response History")
+for idx, history_item in enumerate(st.session_state['response_history']):
+    st.sidebar.subheader(f"History {idx + 1}")
+    st.sidebar.text(history_item['response'][:100] + '...')  # Display first 100 characters of the response
+    # Display the ratings if they are available
+    if 'ratings' in history_item:
+        ratings = history_item['ratings']
+        st.sidebar.text(f"Length: {ratings['length']}, Complexity: {ratings['complexity']}, Tone: {ratings['tone']}")
